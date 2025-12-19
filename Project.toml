@@ -1,0 +1,17 @@
+name = "Roads"
+uuid = "65fc3003-75ee-4280-8ae3-3ac56715de9c"
+version = "0.1.0"
+authors = ["MOVIRIO GmbH <info@movi.io>"]
+
+[deps]
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+OpenSourceRoutingMachine = "19e5a071-0e58-4e20-9e36-393e8533d14d"
+osmium_jll = "4698e515-9779-5814-ac19-c1da39f829b4"
+
+[sources]
+OpenSourceRoutingMachine = {rev = "main", url = "https://github.com/moviro-hub/OpenSourceRoutingMachine.jl"}
+
+[compat]
+Downloads = "1.7.0"
+OpenSourceRoutingMachine = "0.1.0"
+osmium_jll = "1.17.0"
