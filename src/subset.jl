@@ -1,6 +1,7 @@
 """
-    osmium_extract(input_file; bbox=nothing, config_file=nothing, polygon_file=nothing, output_file=nothing, output_directory=nothing, ...)
+    subset_file(input_file; bbox=nothing, config_file=nothing, polygon_file=nothing, output_file=nothing, output_directory=nothing, ...)
 
+`subset_file` is a wrapper around the osmium extract command.
 Extract OSM data from an input file using a bounding box, config file, or polygon file.
 
 # Arguments
@@ -42,18 +43,18 @@ Extract OSM data from an input file using a bounding box, config file, or polygo
 
 # Examples
 ```julia
-osmium_extract("path/to/input.osm.pbf")
-osmium_extract("path/to/input.osm.pbf", bbox = box)
-osmium_extract("path/to/input.osm.pbf", config_file = "path/to/config.json")
-osmium_extract("path/to/input.osm.pbf", polygon_file = "path/to/polygon.geojson")
-osmium_extract("path/to/input.osm.pbf", output_file = "path/to/output.osm.pbf")
-osmium_extract("path/to/input.osm.pbf", output_directory = "path/to/output")
+subset_file("path/to/input.osm.pbf")
+subset_file("path/to/input.osm.pbf", bbox = box)
+subset_file("path/to/input.osm.pbf", config_file = "path/to/config.json")
+subset_file("path/to/input.osm.pbf", polygon_file = "path/to/polygon.geojson")
+subset_file("path/to/input.osm.pbf", output_file = "path/to/output.osm.pbf")
+subset_file("path/to/input.osm.pbf", output_directory = "path/to/output")
 ```
 """
-function osmium_extract(
+function subset_file(
         input_file;
         # Extraction method
-        bbox::NamedTuple{(:southwest, :northeast), Tuple{NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}, NamedTuple{(:lat, :lon), Tuple{Float64, Float64}}}} = nothing,
+        bbox::NamedTuple{(:southwest_lat, :southwest_lon, :northeast_lat, :northeast_lon), Tuple{Float32, Float32, Float32, Float32}} = nothing,
         config_file::Union{String, Nothing} = nothing,
         polygon_file::Union{String, Nothing} = nothing,
         # Output options
@@ -94,7 +95,7 @@ function osmium_extract(
 
     # Extraction method
     if bbox !== nothing
-        bbox_string = "$(bbox.southwest.lon),$(bbox.southwest.lat),$(bbox.northeast.lon),$(bbox.northeast.lat)"
+        bbox_string = "$(bbox.southwest_lon),$(bbox.southwest_lat),$(bbox.northeast_lon),$(bbox.northeast_lat)"
         cmd = `$cmd -b $bbox_string`
     elseif config_file !== nothing
         cmd = `$cmd -c $config_file`
