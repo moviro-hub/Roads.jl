@@ -1,5 +1,5 @@
 """
-    creat_graph_files(
+    create_graph_files(
         osm_path,
         osrm_base_path;
         profile=nothing,
@@ -59,11 +59,11 @@ Returns `nothing`.
 # Examples
 ```julia
 # Basic usage with default profile
-creat_graph_files("data.osm.pbf", "data.osrm")
+create_graph_files("data.osm.pbf", "data.osrm")
 
 # Using common arguments for all steps
 using OpenSourceRoutingMachine: VERBOSITY_DEBUG
-creat_graph_files(
+create_graph_files(
     "data.osm.pbf",
     "data.osrm";
     verbosity = VERBOSITY_DEBUG,
@@ -71,7 +71,7 @@ creat_graph_files(
 )
 
 # With step-specific arguments
-creat_graph_files(
+create_graph_files(
     "data.osm.pbf",
     "data.osrm";
     verbosity = VERBOSITY_INFO,
@@ -83,14 +83,14 @@ creat_graph_files(
 
 ```
 """
-function creat_graph_files(
+function create_graph_files(
         osm_path::AbstractString,
         osrm_base_path::AbstractString;
         # Common arguments
-        verbosity::Graph.Verbosity = Graph.VERBOSITY_INFO,
+        log_level::Type{L} = LogLevelInfo,
         threads::Int = 1,
         # Extract-specific arguments
-        profile::Union{OSRMs.Profile, String, Function} = OSRMs.PROFILE_CAR,
+        travel_mode::Type{T} = TravelModeCar,
         data_version::String = "",
         with_osm_metadata::Bool = false,
         parse_conditional_restrictions::Bool = false,
@@ -110,13 +110,11 @@ function creat_graph_files(
         edge_weight_updates_over_factor::Float64 = 0.0,
         parse_conditionals_from_now::Int64 = 0,
         time_zone_file::String = "",
-    )
-    if isa(profile, Function)
-        profile = profile()
-    end
-    if isa(profile, String) || isa(profile, Profile)
-        throw(ArgumentError("profile must be a function that returns a Profile or a string path to a custom profile.lua file"))
-    end
+    ) where {L <: LogLevel, T <: TravelMode}
+    @info travel_mode
+    profile = travel_mode_to_profile(travel_mode)
+    verbosity = log_level_to_verbosity(log_level)
+
     # Step 1: Extract
     Graph.extract(
         osm_path;
