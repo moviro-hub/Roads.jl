@@ -1,3 +1,6 @@
+using OpenSourceRoutingMachine: Verbosity, VERBOSITY_INFO
+using OpenSourceRoutingMachine.Graph: Graph, Profile, PROFILE_CAR
+
 """
     create_graph_files(
         osm_path,
@@ -87,10 +90,10 @@ function create_graph_files(
         osm_path::AbstractString,
         osrm_base_path::AbstractString;
         # Common arguments
-        log_level::Type{L} = LogLevelInfo,
+        verbosity::Verbosity = VERBOSITY_INFO,
         threads::Int = 1,
         # Extract-specific arguments
-        travel_mode::Type{T} = TravelModeCar,
+        travel_mode::Union{Profile, String} = PROFILE_CAR,
         data_version::String = "",
         with_osm_metadata::Bool = false,
         parse_conditional_restrictions::Bool = false,
@@ -110,14 +113,34 @@ function create_graph_files(
         edge_weight_updates_over_factor::Float64 = 0.0,
         parse_conditionals_from_now::Int64 = 0,
         time_zone_file::String = "",
-    ) where {L <: LogLevel, T <: TravelMode}
-    @info travel_mode
-    profile = travel_mode_to_profile(travel_mode)
-    verbosity = log_level_to_verbosity(log_level)
+    )
 
     # Step 1: Extract
+    # OSRM extract creates .osrm files based on the input filename (replacing .osm.pbf with .osrm).
+    # We need to ensure extract creates files that match osrm_base_path.
+    profile = travel_mode isa String ? travel_mode : Graph.profile_path(travel_mode)
+
+    # Get the directory and base name for osrm_base_path
+    osrm_dir = dirname(osrm_base_path)
+    osrm_base_name = basename(osrm_base_path)
+    # Remove .osrm extension if present to get the base name
+    if endswith(osrm_base_name, ".osrm")
+        osrm_base_name = osrm_base_name[1:(end - 5)]  # Remove ".osrm"
+    end
+
+    # Extract creates files based on input filename, so we need to create a temp input
+    # file with a name that will produce the desired output files
+    # If input is "file.osm.pbf", extract creates "file.osrm.*"
+    # So we need input to be "osrm_base_name.osm.pbf" in osrm_dir
+    temp_extract_path = joinpath(osrm_dir, "$osrm_base_name.osm.pbf")
+
+    # Copy input to temp location if needed (only if paths differ)
+    if normpath(osm_path) != normpath(temp_extract_path)
+        cp(osm_path, temp_extract_path; force = true)
+    end
+
     Graph.extract(
-        osm_path;
+        temp_extract_path;
         profile = profile,
         verbosity = verbosity,
         data_version = data_version,
@@ -129,6 +152,11 @@ function create_graph_files(
         disable_location_cache = disable_location_cache,
         dump_nbg_graph = dump_nbg_graph,
     )
+
+    # Clean up temp extract file if it was created
+    if normpath(osm_path) != normpath(temp_extract_path) && isfile(temp_extract_path)
+        rm(temp_extract_path; force = true)
+    end
 
     # Step 2: Partition
     Graph.partition(

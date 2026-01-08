@@ -1,9 +1,11 @@
 # Roads.jl
 
-This package provides a collection of tools for working with road networks.
+This package provides a collection of tools, like osmium and OSRM, for working with road networks.
 
+**Note**: This package is a work in progress and it's a API is subject to change.
 
-It provides the following functionality:
+## Current Features
+The package provides the following functionality:
 - Subsetting OSM data
 - Creating OSRM road network from OSM data
 - Snapping locations to the road network

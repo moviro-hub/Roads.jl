@@ -64,7 +64,7 @@ function subset_file(
         strategy::Union{String, Nothing} = "complete_ways",
         strategy_option::Union{String, Nothing} = nothing,
         set_bounds::Bool = false,
-        clean::Union{String, Nothing} = nothing,
+        clean::Union{String, Vector{String}, Nothing} = nothing,
         # History options
         with_history::Bool = false,
         # Input options

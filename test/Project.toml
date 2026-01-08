@@ -1,0 +1,6 @@
+[deps]
+Roads = "65fc3003-75ee-4280-8ae3-3ac56715de9c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+Roads = {path = ".."}

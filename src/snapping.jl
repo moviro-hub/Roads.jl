@@ -1,5 +1,5 @@
 using OpenSourceRoutingMachine.Nearest: Nearest
-using OpenSourceRoutingMachine: OpenSourceRoutingMachine as OSRMs
+using OpenSourceRoutingMachine: OpenSourceRoutingMachine as OSRMs, Snapping, SNAPPING_DEFAULT, Approach, APPROACH_UNRESTRICTED
 
 mutable struct Location
     # street name, POI, etc
@@ -22,10 +22,10 @@ function snap_location(
         radius::Union{Real, Nothing} = nothing,
         azimuth::Union{Real, Nothing} = nothing,
         azimuth_range::Integer = 15,
-        snapping::Type{S} = SnappingKindDefault,
-        approach::Type{A} = ApproachWaypointUnrestricted,
+        snapping::Snapping = SNAPPING_DEFAULT,
+        approach::Approach = APPROACH_UNRESTRICTED,
         excludes::Vector{String} = String[],
-    ) where {S <: SnappingKind, A <: ApproachWaypoint}
+    )
     params = Nearest.NearestParams()
     Nearest.add_coordinate!(params, OSRMs.Position(position.lon, position.lat))
 
@@ -36,9 +36,7 @@ function snap_location(
     if azimuth !== nothing
         Nearest.set_bearing!(params, 1, round(Int, azimuth), azimuth_range)
     end
-    snapping = snapping_kind_to_snapping(snapping)
     Nearest.set_snapping!(params, snapping)
-    approach = approach_waypoint_to_approach(approach)
     Nearest.set_approach!(params, 1, approach)
 
     for exclude in excludes
