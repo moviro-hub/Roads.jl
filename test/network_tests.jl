@@ -40,10 +40,13 @@ const TEST_SUBSET_PATH = get_test_subset()
 @testset "create_graph_files" begin
     @testset "Basic graph creation" begin
         mktempdir() do tmpdir
+            # Copy test subset to temp directory with specific name
+            temp_osm_path = joinpath(tmpdir, "hamburg_test.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm_path)
             osrm_base_path = joinpath(tmpdir, "hamburg_test.osrm")
 
             # Test basic graph creation with default parameters using subset data
-            create_graph_files(TEST_SUBSET_PATH, osrm_base_path)
+            create_graph_files(temp_osm_path)
 
             # Check that partition file exists (indicates graph was built)
             @test isfile("$osrm_base_path.partition")
@@ -58,13 +61,17 @@ const TEST_SUBSET_PATH = get_test_subset()
     @testset "Different profiles" begin
         mktempdir() do tmpdir
             # Test with PROFILE_CAR (default)
+            temp_osm_car = joinpath(tmpdir, "hamburg_car.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm_car)
             osrm_base_car = joinpath(tmpdir, "hamburg_car.osrm")
-            create_graph_files(TEST_SUBSET_PATH, osrm_base_car; travel_mode = PROFILE_CAR)
+            create_graph_files(temp_osm_car; profile = PROFILE_CAR)
             @test isfile("$osrm_base_car.partition")
 
             # Test with PROFILE_BICYCLE
+            temp_osm_bicycle = joinpath(tmpdir, "hamburg_bicycle.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm_bicycle)
             osrm_base_bicycle = joinpath(tmpdir, "hamburg_bicycle.osrm")
-            create_graph_files(TEST_SUBSET_PATH, osrm_base_bicycle; travel_mode = PROFILE_BICYCLE)
+            create_graph_files(temp_osm_bicycle; profile = PROFILE_BICYCLE)
             @test isfile("$osrm_base_bicycle.partition")
         end
     end
@@ -72,8 +79,10 @@ const TEST_SUBSET_PATH = get_test_subset()
     @testset "Verbosity levels" begin
         mktempdir() do tmpdir
             # Test with VERBOSITY_NONE
+            temp_osm_none = joinpath(tmpdir, "hamburg_none.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm_none)
             osrm_base_none = joinpath(tmpdir, "hamburg_none.osrm")
-            create_graph_files(TEST_SUBSET_PATH, osrm_base_none; verbosity = VERBOSITY_NONE)
+            create_graph_files(temp_osm_none; verbosity = VERBOSITY_NONE)
             @test isfile("$osrm_base_none.partition")
         end
     end
@@ -81,21 +90,24 @@ const TEST_SUBSET_PATH = get_test_subset()
     @testset "Thread parameters" begin
         mktempdir() do tmpdir
             # Test with multiple threads
+            temp_osm_threads = joinpath(tmpdir, "hamburg_threads.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm_threads)
             osrm_base_threads = joinpath(tmpdir, "hamburg_threads.osrm")
-            create_graph_files(TEST_SUBSET_PATH, osrm_base_threads; threads = 2)
+            create_graph_files(temp_osm_threads; threads = 2)
             @test isfile("$osrm_base_threads.partition")
         end
     end
 
     @testset "Extract parameters" begin
         mktempdir() do tmpdir
+            temp_osm = joinpath(tmpdir, "hamburg_extract.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm)
             osrm_base = joinpath(tmpdir, "hamburg_extract.osrm")
 
             # Test with extract parameters (note: data_version may not be supported by all OSRM versions)
             # Test with other extract parameters that are known to work
             create_graph_files(
-                TEST_SUBSET_PATH,
-                osrm_base;
+                temp_osm;
                 with_osm_metadata = false,
                 parse_conditional_restrictions = false,
                 small_component_size = 1000
@@ -106,12 +118,13 @@ const TEST_SUBSET_PATH = get_test_subset()
 
     @testset "Partition parameters" begin
         mktempdir() do tmpdir
+            temp_osm = joinpath(tmpdir, "hamburg_partition.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm)
             osrm_base = joinpath(tmpdir, "hamburg_partition.osrm")
 
             # Test with custom partition parameters
             create_graph_files(
-                TEST_SUBSET_PATH,
-                osrm_base;
+                temp_osm;
                 balance = 1.5,
                 boundary = 0.3,
                 optimizing_cuts = 5,
@@ -123,12 +136,13 @@ const TEST_SUBSET_PATH = get_test_subset()
 
     @testset "Customize parameters" begin
         mktempdir() do tmpdir
+            temp_osm = joinpath(tmpdir, "hamburg_customize.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm)
             osrm_base = joinpath(tmpdir, "hamburg_customize.osrm")
 
             # Test with customize parameters (empty files are fine for testing)
             create_graph_files(
-                TEST_SUBSET_PATH,
-                osrm_base;
+                temp_osm;
                 segment_speed_file = String[],
                 turn_penalty_file = String[],
                 edge_weight_updates_over_factor = 0.5,
@@ -141,15 +155,16 @@ const TEST_SUBSET_PATH = get_test_subset()
 
     @testset "Combined parameters" begin
         mktempdir() do tmpdir
+            temp_osm = joinpath(tmpdir, "hamburg_combined.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm)
             osrm_base = joinpath(tmpdir, "hamburg_combined.osrm")
 
             # Test with multiple parameters combined (without data_version which may not be supported)
             create_graph_files(
-                TEST_SUBSET_PATH,
-                osrm_base;
+                temp_osm;
                 verbosity = VERBOSITY_INFO,
                 threads = 1,
-                travel_mode = PROFILE_CAR,
+                profile = PROFILE_CAR,
                 small_component_size = 2000,
                 balance = 1.3,
                 boundary = 0.2,
@@ -162,9 +177,11 @@ const TEST_SUBSET_PATH = get_test_subset()
 
     @testset "Graph file verification" begin
         mktempdir() do tmpdir
+            temp_osm = joinpath(tmpdir, "hamburg_verify.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm)
             osrm_base = joinpath(tmpdir, "hamburg_verify.osrm")
 
-            create_graph_files(TEST_SUBSET_PATH, osrm_base)
+            create_graph_files(temp_osm)
 
             # Verify key files exist
             @test isfile("$osrm_base.partition")
@@ -183,15 +200,17 @@ const TEST_SUBSET_PATH = get_test_subset()
 
     @testset "Re-building graph" begin
         mktempdir() do tmpdir
+            temp_osm = joinpath(tmpdir, "hamburg_rebuild.osm.pbf")
+            cp(TEST_SUBSET_PATH, temp_osm)
             osrm_base = joinpath(tmpdir, "hamburg_rebuild.osrm")
 
             # Build graph first time
-            create_graph_files(TEST_SUBSET_PATH, osrm_base)
+            create_graph_files(temp_osm)
             @test isfile("$osrm_base.partition")
             first_partition_size = filesize("$osrm_base.partition")
 
             # Re-build graph (should overwrite)
-            create_graph_files(TEST_SUBSET_PATH, osrm_base)
+            create_graph_files(temp_osm)
             @test isfile("$osrm_base.partition")
             second_partition_size = filesize("$osrm_base.partition")
 
@@ -202,11 +221,9 @@ const TEST_SUBSET_PATH = get_test_subset()
 
     @testset "Input validation" begin
         mktempdir() do tmpdir
-            osrm_base = joinpath(tmpdir, "test.osrm")
-
             # Test with non-existent input file - should throw an error
             try
-                create_graph_files("/nonexistent/file.osm.pbf", osrm_base)
+                create_graph_files("/nonexistent/file.osm.pbf")
                 @test false  # Should not reach here
             catch e
                 # Expected - should be some kind of error
