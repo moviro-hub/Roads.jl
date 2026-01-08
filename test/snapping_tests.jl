@@ -23,7 +23,7 @@ function get_test_osrm()::OSRM
 
         if !isfile("$osrm_base_path.partition")
             @info "Building OSRM graph for tests..."
-            create_graph_files(HAMBURG_OSM_PATH, osrm_base_path; travel_mode = PROFILE_CAR)
+            create_graph_files(HAMBURG_OSM_PATH; profile = PROFILE_CAR)
         end
 
         _test_osrm_cache[] = OSRM(osrm_base_path)
