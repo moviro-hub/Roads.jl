@@ -18,12 +18,47 @@ Get a test OSRM instance, building the graph if necessary.
 """
 function get_test_osrm()::OSRM
     if _test_osrm_cache[] === nothing
-        # Build OSRM graph if it doesn't exist
+        # Build OSRM graph if it doesn't exist or is incomplete
         osrm_base_path = joinpath(TEST_DATA_DIR, "hamburg-latest.osrm")
 
-        if !isfile("$osrm_base_path.partition")
+        # Check for all required OSRM files
+        required_files = [
+            "$osrm_base_path.partition",
+            "$osrm_base_path.cells",
+            "$osrm_base_path.cell_metrics",
+            "$osrm_base_path.mldgr"
+        ]
+
+        graph_complete = all(isfile, required_files)
+
+        if !graph_complete
             @info "Building OSRM graph for tests..."
+
+            # Remove any incomplete graph files to ensure clean regeneration
+            # Remove all known OSRM file extensions
+            osrm_extensions = [
+                ".partition", ".cells", ".cell_metrics", ".mldgr",
+                ".ebg", ".ebg_nodes", ".enw", ".cnbg", ".hsgr",
+                ".ramIndex", ".properties", ".maneuver_overrides",
+                ".datasource_names", ".fileIndex", ".geometry",
+                ".names", ".timestamp", ".edges", ".nodes"
+            ]
+
+            for ext in osrm_extensions
+                file = "$osrm_base_path$ext"
+                if isfile(file)
+                    rm(file; force = true)
+                end
+            end
+
             create_graph_files(HAMBURG_OSM_PATH; profile = PROFILE_CAR)
+
+            # Verify all files were created
+            for file in required_files
+                if !isfile(file)
+                    error("Required OSRM file not created: $file")
+                end
+            end
         end
 
         _test_osrm_cache[] = OSRM(osrm_base_path)
