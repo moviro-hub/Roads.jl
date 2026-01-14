@@ -20,12 +20,47 @@ Get a test OSRM instance, building the graph if necessary.
 """
 function get_test_osrm()::OSRM
     if _test_osrm_cache[] === nothing
-        # Build OSRM graph if it doesn't exist
+        # Build OSRM graph if it doesn't exist or is incomplete
         osrm_base_path = joinpath(TEST_DATA_DIR, "hamburg-latest.osrm")
 
-        if !isfile("$osrm_base_path.partition")
+        # Check for all required OSRM files
+        required_files = [
+            "$osrm_base_path.partition",
+            "$osrm_base_path.cells",
+            "$osrm_base_path.cell_metrics",
+            "$osrm_base_path.mldgr",
+        ]
+
+        graph_complete = all(isfile, required_files)
+
+        if !graph_complete
             @info "Building OSRM graph for tests..."
+
+            # Remove any incomplete graph files to ensure clean regeneration
+            # Remove all known OSRM file extensions
+            osrm_extensions = [
+                ".partition", ".cells", ".cell_metrics", ".mldgr",
+                ".ebg", ".ebg_nodes", ".enw", ".cnbg", ".hsgr",
+                ".ramIndex", ".properties", ".maneuver_overrides",
+                ".datasource_names", ".fileIndex", ".geometry",
+                ".names", ".timestamp", ".edges", ".nodes",
+            ]
+
+            for ext in osrm_extensions
+                file = "$osrm_base_path$ext"
+                if isfile(file)
+                    rm(file; force = true)
+                end
+            end
+
             create_graph_files(HAMBURG_OSM_PATH; profile = PROFILE_CAR)
+
+            # Verify all files were created
+            for file in required_files
+                if !isfile(file)
+                    error("Required OSRM file not created: $file")
+                end
+            end
         end
 
         _test_osrm_cache[] = OSRM(osrm_base_path)
@@ -74,16 +109,16 @@ end
         end
 
         # Check exact values for known routes in Hamburg test dataset
-        # Airport (index 2) to Port (index 3): 1804.2 seconds
-        @test result.metrics[2, 3] ≈ 1804.2f0 atol = 0.1f0
-        # Port (index 3) to Airport (index 2): 1847.0 seconds
-        @test result.metrics[3, 2] ≈ 1847.0f0 atol = 0.1f0
-        # All routes from city center (index 1) are unreachable (0.0)
-        @test result.metrics[1, 1] == 0.0f0
-        @test result.metrics[1, 2] == 0.0f0
-        @test result.metrics[1, 3] == 0.0f0
-        @test result.metrics[2, 1] == 0.0f0
-        @test result.metrics[3, 1] == 0.0f0
+        # Airport (index 2) to Port (index 3): 1696.0 seconds
+        @test result.metrics[2, 3] ≈ 1696.0f0 atol = 0.1f0
+        # Port (index 3) to Airport (index 2): 1738.8 seconds
+        @test result.metrics[3, 2] ≈ 1738.8f0 atol = 0.1f0
+        # City center (index 1) routes
+        @test result.metrics[1, 1] == 0.0f0  # City center to itself
+        @test result.metrics[1, 2] ≈ 1132.2f0 atol = 0.1f0  # City center to Airport
+        @test result.metrics[1, 3] ≈ 778.9f0 atol = 0.1f0  # City center to Port
+        @test result.metrics[2, 1] ≈ 1108.9f0 atol = 0.1f0  # Airport to City center
+        @test result.metrics[3, 1] ≈ 908.0f0 atol = 0.1f0  # Port to City center
     end
 
     @testset "Distance annotation" begin
@@ -121,16 +156,16 @@ end
         end
 
         # Check exact values for known routes in Hamburg test dataset
-        # Airport (index 2) to Port (index 3): 28721.5 meters
-        @test result.metrics[2, 3] ≈ 28721.5f0 atol = 0.1f0
-        # Port (index 3) to Airport (index 2): 22698.4 meters
-        @test result.metrics[3, 2] ≈ 22698.4f0 atol = 0.1f0
-        # All routes from city center (index 1) are unreachable (0.0)
-        @test result.metrics[1, 1] == 0.0f0
-        @test result.metrics[1, 2] == 0.0f0
-        @test result.metrics[1, 3] == 0.0f0
-        @test result.metrics[2, 1] == 0.0f0
-        @test result.metrics[3, 1] == 0.0f0
+        # Airport (index 2) to Port (index 3): 17399.9 meters
+        @test result.metrics[2, 3] ≈ 17399.9f0 atol = 0.1f0
+        # Port (index 3) to Airport (index 2): 18240.3 meters
+        @test result.metrics[3, 2] ≈ 18240.3f0 atol = 0.1f0
+        # City center (index 1) routes
+        @test result.metrics[1, 1] == 0.0f0  # City center to itself
+        @test result.metrics[1, 2] ≈ 11266.6f0 atol = 0.1f0  # City center to Airport
+        @test result.metrics[1, 3] ≈ 7861.9f0 atol = 0.1f0  # City center to Port
+        @test result.metrics[2, 1] ≈ 10712.1f0 atol = 0.1f0  # Airport to City center
+        @test result.metrics[3, 1] ≈ 9129.3f0 atol = 0.1f0  # Port to City center
     end
 
     @testset "Duration annotation" begin
@@ -168,16 +203,16 @@ end
         end
 
         # Check exact values for known routes in Hamburg test dataset
-        # Airport (index 2) to Port (index 3): 1804.2 seconds
-        @test result.metrics[2, 3] ≈ 1804.2f0 atol = 0.1f0
-        # Port (index 3) to Airport (index 2): 1847.0 seconds
-        @test result.metrics[3, 2] ≈ 1847.0f0 atol = 0.1f0
-        # All routes from city center (index 1) are unreachable (0.0)
-        @test result.metrics[1, 1] == 0.0f0
-        @test result.metrics[1, 2] == 0.0f0
-        @test result.metrics[1, 3] == 0.0f0
-        @test result.metrics[2, 1] == 0.0f0
-        @test result.metrics[3, 1] == 0.0f0
+        # Airport (index 2) to Port (index 3): 1696.0 seconds
+        @test result.metrics[2, 3] ≈ 1696.0f0 atol = 0.1f0
+        # Port (index 3) to Airport (index 2): 1738.8 seconds
+        @test result.metrics[3, 2] ≈ 1738.8f0 atol = 0.1f0
+        # City center (index 1) routes
+        @test result.metrics[1, 1] == 0.0f0  # City center to itself
+        @test result.metrics[1, 2] ≈ 1132.2f0 atol = 0.1f0  # City center to Airport
+        @test result.metrics[1, 3] ≈ 778.9f0 atol = 0.1f0  # City center to Port
+        @test result.metrics[2, 1] ≈ 1108.9f0 atol = 0.1f0  # Airport to City center
+        @test result.metrics[3, 1] ≈ 908.0f0 atol = 0.1f0  # Port to City center
     end
 
     @testset "Origin and destination indices" begin
@@ -198,15 +233,15 @@ end
         # result.metrics[1, 2] should be from location 1 to location 3
         # result.metrics[2, 1] should be from location 2 to location 2 (same location)
         # result.metrics[2, 2] should be from location 2 to location 3
-        @test result.metrics[1, 1] == 0.0f0  # 1 -> 2 (unreachable)
-        @test result.metrics[1, 2] == 0.0f0  # 1 -> 3 (unreachable)
+        @test result.metrics[1, 1] ≈ 1132.2f0 atol = 0.1f0  # 1 -> 2 (City center to Airport)
+        @test result.metrics[1, 2] ≈ 778.9f0 atol = 0.1f0  # 1 -> 3 (City center to Port)
         @test result.metrics[2, 1] == 0.0f0  # 2 -> 2 (should be exactly 0, same location)
         # Check exact values: Airport (index 2) to Port (index 3)
-        # Duration: 1804.2 seconds, Distance: 28721.5 meters
+        # Duration: 1696.0 seconds, Distance: 17399.9 meters
         if result.metric_type == :duration
-            @test result.metrics[2, 2] ≈ 1804.2f0 atol = 0.1f0  # 2 -> 3
+            @test result.metrics[2, 2] ≈ 1696.0f0 atol = 0.1f0  # 2 -> 3
         elseif result.metric_type == :distance
-            @test result.metrics[2, 2] ≈ 28721.5f0 atol = 0.1f0  # 2 -> 3
+            @test result.metrics[2, 2] ≈ 17399.9f0 atol = 0.1f0  # 2 -> 3
         else
             error("Unknown metric type: $(result.metric_type)")
         end
@@ -243,10 +278,10 @@ end
             @test !isinf(result.metrics[1, j])
         end
 
-        # Check exact values: all routes from city center (index 1) are unreachable
-        @test result.metrics[1, 1] == 0.0f0  # 1 -> 1
-        @test result.metrics[1, 2] == 0.0f0  # 1 -> 2
-        @test result.metrics[1, 3] == 0.0f0  # 1 -> 3
+        # Check exact values: routes from city center (index 1)
+        @test result.metrics[1, 1] == 0.0f0  # 1 -> 1 (City center to itself)
+        @test result.metrics[1, 2] ≈ 1132.2f0 atol = 0.1f0  # 1 -> 2 (City center to Airport)
+        @test result.metrics[1, 3] ≈ 778.9f0 atol = 0.1f0  # 1 -> 3 (City center to Port)
     end
 
     @testset "Multiple origins to single destination" begin
@@ -273,10 +308,10 @@ end
         end
 
         # Check exact values for routes to airport (index 2)
-        @test result.metrics[1, 1] == 0.0f0  # 1 -> 2 (unreachable)
+        @test result.metrics[1, 1] ≈ 1132.2f0 atol = 0.1f0  # 1 -> 2 (City center to Airport)
         @test result.metrics[2, 1] == 0.0f0  # 2 -> 2 (same location)
-        # Port (index 3) to Airport (index 2): 1847.0 seconds
-        @test result.metrics[3, 1] ≈ 1847.0f0 atol = 0.1f0  # 3 -> 2
+        # Port (index 3) to Airport (index 2): 1738.8 seconds
+        @test result.metrics[3, 1] ≈ 1738.8f0 atol = 0.1f0  # 3 -> 2
     end
 
     @testset "Fallback parameters" begin
