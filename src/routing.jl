@@ -33,7 +33,8 @@ function route_many_to_many(
     for destination_index in destination_indices
         Table.add_destination!(params, destination_index)
     end
-    # TODO: Once we move to the new `libosrmc` version, we can remove this and use the annotation parameter directly
+    # Always request both annotations (OSRM requires both to be requested together)
+    # but we'll only use the one the user requested
     Table.set_annotations!(params, TABLE_ANNOTATIONS_DURATION | TABLE_ANNOTATIONS_DISTANCE)
     Table.set_fallback_coordinate_type!(params, fallback_coordinate_type)
     if fallback_speed !== nothing
@@ -55,7 +56,7 @@ function route_many_to_many(
         if isempty(result.table.durations)
             throw(ArgumentError("Duration annotation requested but durations array is empty. This may indicate an issue with the OSRM configuration or data."))
         end
-        metric_matrix = permutedims(reshape(result.table.durations, result.table.cols, result.table.rows), (2, 1)) .* 60.0
+        metric_matrix = permutedims(reshape(result.table.durations, result.table.cols, result.table.rows), (2, 1))
         metric_type = :duration
     else
         throw(ArgumentError("annotation must be TABLE_ANNOTATIONS_DISTANCE or TABLE_ANNOTATIONS_DURATION"))
