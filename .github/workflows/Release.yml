@@ -1,3 +1,6 @@
+# Release flow: when a tag vX.Y.Z is pushed, this workflow creates branch
+# release-X.Y.Z (so it can be checked out later) and the GitHub Release.
+
 name: Release
 
 on:
@@ -12,6 +15,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create release branch
+        run: |
+          TAG="${{ github.ref_name }}"
+          BRANCH="release-${TAG#v}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
