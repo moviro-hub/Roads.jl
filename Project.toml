@@ -1,6 +1,6 @@
 name = "Roads"
 uuid = "65fc3003-75ee-4280-8ae3-3ac56715de9c"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["MOVIRIO GmbH <info@movi.io>"]
 
 [deps]
