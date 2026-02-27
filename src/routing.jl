@@ -50,13 +50,13 @@ function route_many_to_many(
         if isempty(result.table.distances)
             throw(ArgumentError("Distance annotation requested but distances array is empty. This may indicate an issue with the OSRM configuration or data."))
         end
-        metric_matrix = permutedims(reshape(result.table.distances, result.table.cols, result.table.rows), (2, 1))
+        metric_matrix = permutedims(reshape(result.table.distances, Int(result.table.cols), Int(result.table.rows)), (2, 1))
         metric_type = :distance
     elseif annotation == TABLE_ANNOTATIONS_DURATION
         if isempty(result.table.durations)
             throw(ArgumentError("Duration annotation requested but durations array is empty. This may indicate an issue with the OSRM configuration or data."))
         end
-        metric_matrix = permutedims(reshape(result.table.durations, result.table.cols, result.table.rows), (2, 1))
+        metric_matrix = permutedims(reshape(result.table.durations, Int(result.table.cols), Int(result.table.rows)), (2, 1))
         metric_type = :duration
     else
         throw(ArgumentError("annotation must be TABLE_ANNOTATIONS_DISTANCE or TABLE_ANNOTATIONS_DURATION"))
